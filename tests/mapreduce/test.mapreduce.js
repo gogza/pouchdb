@@ -62,7 +62,7 @@ function tests(suiteName, dbName, dbType, viewType) {
       return new PouchDB(dbName).destroy();
     });
     afterEach(function () {
-      return new PouchDB(dbName).destroy();
+      //return new PouchDB(dbName).destroy();
     });
 
 
@@ -1574,7 +1574,11 @@ function tests(suiteName, dbName, dbType, viewType) {
         map: function (doc) {
           emit(doc.foo);
         },
-        reduce: function (keys) {
+        reduce: function (keys, values, rereduce) {
+          if (rereduce) {
+            return [].concat.apply([], values);
+          }
+
           return keys.map(function (keyId) {
             var key = keyId[0];
             // var id = keyId[1];
