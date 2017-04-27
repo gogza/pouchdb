@@ -65,6 +65,14 @@ function tests(suiteName, dbName, dbType, viewType) {
       return new PouchDB(dbName).destroy();
     });
 
+    function normalisedRows(rows) {
+      var result = rows;
+      result.sort(function (a, b) {
+        return a.id > b.id;
+      });
+      return result;
+    }
+
 
     it("Test basic view", function () {
       var db = new PouchDB(dbName);
@@ -2096,10 +2104,7 @@ function tests(suiteName, dbName, dbType, viewType) {
           return db.query(queryFun, opts);
         }).then(function (data) {
           // with duplicates, we return multiple docs
-          var rows = data.rows;
-          rows.sort(function (a, b) {
-            return a.id > b.id;
-          });
+          var rows = normalisedRows(data.rows);
           rows.should.have.length(6, 'returns 6 docs with duplicates');
           rows[0].doc._id.should.equal('doc_0');
           rows[1].doc._id.should.equal('doc_1');
@@ -2112,10 +2117,7 @@ function tests(suiteName, dbName, dbType, viewType) {
           return db.query(queryFun, opts);
         }).then(function (data) {
           // duplicates and unknowns at the same time, for maximum weirdness
-          var rows = data.rows;
-          rows.sort(function (a, b) {
-            return a.id > b.id;
-          });
+          var rows = normalisedRows(data.rows);
           rows.should.have.length(4, 'returns 2 docs with duplicates/unknowns');
           rows[0].doc._id.should.equal('doc_1');
           rows[1].doc._id.should.equal('doc_2');
@@ -2166,13 +2168,15 @@ function tests(suiteName, dbName, dbType, viewType) {
           spec = ['0', '1a', '1b', '1c', '2+3'];
           return db.query(mapFunction, opts);
         }).then(function (data) {
-          data.rows.map(ids).should.deep.equal(spec);
+          var rows = normalisedRows(data.rows);
+          rows.map(ids).should.deep.equal(spec);
 
-          opts.keys = [3, 5, 4, 3];
-          spec = ['2+3', '3+4', '3+5', '3+5', '4+5', '3+4', '4+5', '2+3', '3+4', '3+5'];
+          opts.keys = [3, 3, 4, 5];
+          spec = ['2+3', '2+3', '3+4', '3+4', '3+4', '3+5', '3+5', '3+5', '4+5', '4+5'];
           return db.query(mapFunction, opts);
         }).then(function (data) {
-          data.rows.map(ids).should.deep.equal(spec);
+          var rows = normalisedRows(data.rows);
+          rows.map(ids).should.deep.equal(spec);
         });
       });
     });
@@ -2663,9 +2667,10 @@ function tests(suiteName, dbName, dbType, viewType) {
           res.total_rows.should.equal(8, 'correctly return total_rows');
           return db.query(mapFun, {keys : ['0', '1', '0', '2', '1', '1']});
         }).then(function (res) {
-          res.rows.should.have.length(6, 'correctly return rows');
-          res.rows.map(function (row) { return row.key; }).should.deep.equal(
-            ['0', '1', '0', '2', '1', '1']);
+          var rows = normalisedRows(res.rows);
+          rows.should.have.length(6, 'correctly return rows');
+          rows.map(function (row) { return row.key; }).should.deep.equal(
+            ['0', '0', '1', '1', '1', '2']);
           res.total_rows.should.equal(8, 'correctly return total_rows');
           return db.query(mapFun, {keys : []});
         }).then(function (res) {
