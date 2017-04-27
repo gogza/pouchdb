@@ -62,7 +62,7 @@ function tests(suiteName, dbName, dbType, viewType) {
       return new PouchDB(dbName).destroy();
     });
     afterEach(function () {
-      //return new PouchDB(dbName).destroy();
+      return new PouchDB(dbName).destroy();
     });
 
 
@@ -2096,23 +2096,31 @@ function tests(suiteName, dbName, dbType, viewType) {
           return db.query(queryFun, opts);
         }).then(function (data) {
           // with duplicates, we return multiple docs
-          data.rows.should.have.length(6, 'returns 6 docs with duplicates');
-          data.rows[0].doc._id.should.equal('doc_2');
-          data.rows[1].doc._id.should.equal('doc_1');
-          data.rows[2].doc._id.should.equal('doc_2');
-          data.rows[3].doc._id.should.equal('doc_0');
-          data.rows[4].doc._id.should.equal('doc_2');
-          data.rows[5].doc._id.should.equal('doc_1');
+          var rows = data.rows;
+          rows.sort(function (a, b) {
+            return a.id > b.id;
+          });
+          rows.should.have.length(6, 'returns 6 docs with duplicates');
+          rows[0].doc._id.should.equal('doc_0');
+          rows[1].doc._id.should.equal('doc_1');
+          rows[2].doc._id.should.equal('doc_1');
+          rows[3].doc._id.should.equal('doc_2');
+          rows[4].doc._id.should.equal('doc_2');
+          rows[5].doc._id.should.equal('doc_2');
 
           opts.keys = [2, 1, 2, 3, 2];
           return db.query(queryFun, opts);
         }).then(function (data) {
           // duplicates and unknowns at the same time, for maximum weirdness
-          data.rows.should.have.length(4, 'returns 2 docs with duplicates/unknowns');
-          data.rows[0].doc._id.should.equal('doc_2');
-          data.rows[1].doc._id.should.equal('doc_1');
-          data.rows[2].doc._id.should.equal('doc_2');
-          data.rows[3].doc._id.should.equal('doc_2');
+          var rows = data.rows;
+          rows.sort(function (a, b) {
+            return a.id > b.id;
+          });
+          rows.should.have.length(4, 'returns 2 docs with duplicates/unknowns');
+          rows[0].doc._id.should.equal('doc_1');
+          rows[1].doc._id.should.equal('doc_2');
+          rows[2].doc._id.should.equal('doc_2');
+          rows[3].doc._id.should.equal('doc_2');
 
           opts.keys = [3];
           return db.query(queryFun, opts);
