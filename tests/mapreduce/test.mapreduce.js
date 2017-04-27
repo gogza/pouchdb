@@ -68,7 +68,10 @@ function tests(suiteName, dbName, dbType, viewType) {
     function normalisedRows(rows) {
       var result = rows;
       result.sort(function (a, b) {
-        return a.id > b.id;
+        if (a.id !== b.id) {
+          return a.id > b.id;
+        }
+        return a.value > b.value;
       });
       return result;
     }
@@ -2254,13 +2257,14 @@ function tests(suiteName, dbName, dbType, viewType) {
           return db.query(mapFunction);
         });
       }).then(function (data) {
-        data.rows.should.have.length(3);
-        data.rows[0].key.should.eql(['a']);
-        data.rows[0].value.should.equal(1);
-        data.rows[1].key.should.eql(['a']);
-        data.rows[1].value.should.equal(2);
-        data.rows[2].key.should.eql(['b']);
-        data.rows[2].value.should.equal(3);
+        var rows = normalisedRows(data.rows);
+        rows.should.have.length(3);
+        rows[0].key.should.eql(['a']);
+        rows[0].value.should.equal(1);
+        rows[1].key.should.eql(['a']);
+        rows[1].value.should.equal(2);
+        rows[2].key.should.eql(['b']);
+        rows[2].value.should.equal(3);
       });
     });
 
@@ -2732,23 +2736,26 @@ function tests(suiteName, dbName, dbType, viewType) {
         return db.bulkDocs(docs).then(function () {
           return db.query(mapFun, {});
         }).then(function (res) {
-          res.rows.should.have.length(12, 'correctly return rows');
+          var rows = res.rows;
+          console.log(rows);
+          rows.should.have.length(12, 'correctly return rows');
           res.total_rows.should.equal(12, 'correctly return total_rows');
-          res.rows.map(getValues).should.deep.equal(
-            [null, 'crayon!', 'crayon!', 'multiple values!',
-              null, 'crayon!', 'crayon!', 'multiple values!',
-              null, 'fooValue', null, 'fooValue']);
-          res.rows.map(getIds).should.deep.equal(
-            ['doc1', 'doc1', 'doc1', 'doc1',
+          rows.map(getValues).should.deep.equal(
+            ['crayon!', null, 'crayon!', 'multiple values!',
+              'fooValue', null, 'crayon!', 'crayon!',
+              'multiple values!', null, null, 'fooValue']);
+          rows.map(getIds).should.deep.equal(
+            ['doc1', 'doc1', 'doc1', 'doc1', 'doc1', 'doc1',
               'doc2', 'doc2', 'doc2', 'doc2',
-              'doc1', 'doc1', 'doc2', 'doc2']);
+              'doc2', 'doc2']);
           return db.query(mapFun, {startkey : 'foo'});
         }).then(function (res) {
-          res.rows.should.have.length(4, 'correctly return rows');
-          res.total_rows.should.equal(12, 'correctly return total_rows');
-          res.rows.map(getValues).should.deep.equal(
+          var rows = normalisedRows(res.rows);
+          rows.should.have.length(4, 'correctly return rows');
+          total_rows.should.equal(12, 'correctly return total_rows');
+          rows.map(getValues).should.deep.equal(
             [null, 'fooValue', null, 'fooValue']);
-          res.rows.map(getIds).should.deep.equal(
+          rows.map(getIds).should.deep.equal(
             ['doc1', 'doc1', 'doc2', 'doc2']);
           return db.query(mapFun, {startkey : 'foo', endkey : 'foo'});
         }).then(function (res) {
